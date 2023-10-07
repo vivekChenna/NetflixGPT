@@ -1,7 +1,12 @@
 import React from "react";
+import Header from "./Header";
 
 const Browse = () => {
-  return <div>browse component</div>;
+  return (
+    <div className="">
+      <Header />
+    </div>
+  );
 };
 
 export default Browse;

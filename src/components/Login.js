@@ -10,6 +10,9 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { auth } from "../utils/firebase";
+import { updateProfile } from "firebase/auth";
+import { useDispatch } from "react-redux";
+import { addUser } from "../redux/userSlice";
 
 const Login = () => {
   const [isSignInForm, setIsSignInForm] = useState(true);
@@ -17,9 +20,11 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const password = useRef(null);
   const email = useRef(null);
+  const name = useRef(null);
 
   const SubmitHandler = (e) => {
     e.preventDefault();
@@ -46,17 +51,39 @@ const Login = () => {
         password.current.value
       )
         .then((userCredential) => {
-          // Signed up
-          console.log("printing auth");
-          console.log(auth);
           const user = userCredential.user;
-          console.log(user);
-          // ...
+          updateProfile(user, {
+            displayName: name.current.value,
+          })
+            .then(() => {
+              // Profile updated!
+              const { uid, displayName, email } = auth.currentUser;
+              dispatch(
+                addUser({
+                  uid: uid,
+                  displayName: displayName,
+                  email: email,
+                })
+              );
+              // ...
+              navigate("/browse");
+            })
+            .catch((error) => {
+              // An error occurred
+              // ...
+            });
         })
         .catch((error) => {
           const errorCode = error.code;
           const errorMessage = error.message;
-          // ..
+          if (error.code === "auth/email-already-in-use") {
+            setErrorMessage("user already registered");
+            setTimeout(() => {
+              setErrorMessage(null);
+            }, 3000);
+          } else {
+            setErrorMessage(errorCode + "-" + errorMessage);
+          }
         });
     } else {
       signInWithEmailAndPassword(
@@ -68,8 +95,7 @@ const Login = () => {
           // Signed in
           const user = userCredential.user;
           console.log(user);
-          navigate("/contact");
-          // ...
+          navigate("/browse");
         })
         .catch((error) => {
           const errorCode = error.code;
@@ -79,6 +105,8 @@ const Login = () => {
             setTimeout(() => {
               setErrorMessage(null);
             }, 3000);
+          } else {
+            setErrorMessage(errorCode + "-" + errorMessage);
           }
         });
     }
@@ -104,6 +132,7 @@ const Login = () => {
 
         {isSignInForm ? null : (
           <input
+            ref={name}
             className=" px-4 py-3 bg-gray-700 mb-4 outline-none rounded-md text-white"
             type="text"
             placeholder="Name"
