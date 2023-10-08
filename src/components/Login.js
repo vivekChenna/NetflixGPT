@@ -1,9 +1,8 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Header from "./Header";
 import { APP_BG_URL } from "../utils/constants";
 import { ValidateForm } from "../utils/validate";
 import { BsFillEyeFill } from "react-icons/bs";
-import { useNavigate } from "react-router-dom";
 import { BsFillEyeSlashFill } from "react-icons/bs";
 import {
   createUserWithEmailAndPassword,
@@ -19,12 +18,21 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const password = useRef(null);
   const email = useRef(null);
   const name = useRef(null);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setErrorMessage(null);
+    }, 2000);
+
+    return () => {
+      clearTimeout(id);
+    };
+  }, [errorMessage]);
 
   const SubmitHandler = (e) => {
     e.preventDefault();
@@ -35,9 +43,6 @@ const Login = () => {
     setErrorMessage(message);
 
     if (message) {
-      setTimeout(() => {
-        setErrorMessage(null);
-      }, 3000);
       return;
     }
 
@@ -65,8 +70,6 @@ const Login = () => {
                   email: email,
                 })
               );
-              // ...
-              navigate("/browse");
             })
             .catch((error) => {
               // An error occurred
@@ -94,17 +97,12 @@ const Login = () => {
         .then((userCredential) => {
           // Signed in
           const user = userCredential.user;
-          console.log(user);
-          navigate("/browse");
         })
         .catch((error) => {
           const errorCode = error.code;
           const errorMessage = error.message;
           if (errorCode === "auth/invalid-login-credentials") {
             setErrorMessage("Invalid email or password");
-            setTimeout(() => {
-              setErrorMessage(null);
-            }, 3000);
           } else {
             setErrorMessage(errorCode + "-" + errorMessage);
           }

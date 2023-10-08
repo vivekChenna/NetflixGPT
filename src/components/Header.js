@@ -1,28 +1,48 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NetflixLogo from "../utils/images/Netflix_Logo_PMS.png";
-import { signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../utils/firebase";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { addUser, removeUser } from "../redux/userSlice";
 
 const Header = () => {
   const [showSignOut, setShowSignOut] = useState(false);
 
   const user = useSelector((store) => store.user);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSignOut = () => {
     console.log("signout function called");
     signOut(auth)
-      .then(() => {
-        // Sign-out successful.
-        navigate("/");
-      })
+      .then(() => {})
       .catch((error) => {
         // An error happened.
         navigate("/error");
       });
   };
+
+  useEffect(() => {
+    const unSubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const { uid, email, displayName } = user;
+        dispatch(addUser({ uid: uid, email: email, displayName: displayName }));
+        // after user sign up or sign in then navigate him/her to browse page
+        navigate("/browse");
+      } else {
+        // User is signed out
+        dispatch(removeUser());
+        // after user is signed out then navigate to home page
+        navigate("/");
+      }
+    });
+
+    // this unsubscribe method is like an event listener therefore we have to remove it whenever header unmounts(unloads)
+    return () => {
+      unSubscribe();
+    };
+  }, []);
 
   return (
     <div className="absolute bg-gradient-to-b from-black z-10 py-2 px-5 w-full flex justify-between">
